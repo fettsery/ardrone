@@ -2,6 +2,8 @@
  * @file display_stage.c
  * @author nicolas.brulez@parrot.com
  * @date 2012/09/25
+ * @modified Yury Fettser
+ * @date 2014/20/12
  *
  * This stage is a naive example of how to display video using GTK2 + Cairo
  * In a complete application, all GTK handling (gtk main thread + widgets/window creation)
@@ -22,6 +24,7 @@
 #include <cairo.h>
 #include <gtk/gtk.h>
 
+#include <stdlib.h>
 // Funcs pointer definition
 const vp_api_stage_funcs_t display_stage_funcs = {
     NULL,
@@ -106,6 +109,7 @@ on_expose_event (GtkWidget *widget,
     }
 
     uint32_t actual_width = 0, actual_height = 0;
+    char altitude[20];
     getActualFrameSize (cfg, &actual_width, &actual_height);
     gtk_window_resize (GTK_WINDOW (widget), actual_width, actual_height);
 
@@ -115,8 +119,16 @@ on_expose_event (GtkWidget *widget,
 
     cairo_set_source_surface (cr, surface, 0.0, 0.0);
 
-    cairo_paint (cr);
+    cairo_text_extents_t te;
+    cairo_select_font_face (cr, "Georgia", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size (cr, 1.2);
+    cairo_text_extents (cr, "a", &te);    
+    
+    cairo_move_to (cr, 0.5 - te.width / 2 - te.x_bearing, 0);
+    sprintf(altitude, "%f, %f, %f, %f", cfg->height, cfg->roll, cfg->tangage, cfg->yaw);
+    cairo_show_text(cr, altitude);
 
+    cairo_paint (cr);
     cairo_surface_destroy (surface);
 
     cairo_destroy (cr);

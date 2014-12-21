@@ -2,6 +2,8 @@
  * @file pre_stage.c
  * @author nicolas.brulez@parrot.com
  * @date 2012/09/04
+ * @modified Yury Fettser
+ * @date 2014/20/12
  */
 
 #include "pre_stage.h"

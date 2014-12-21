@@ -21,6 +21,10 @@ typedef struct _display_stage_cfg_ {
     bool_t paramsOK;
 
     GtkWidget *widget;
+    float roll;
+    float tangage;
+    float yaw;
+    float height;
 } display_stage_cfg_t;
 
 C_RESULT display_stage_open (display_stage_cfg_t *cfg);

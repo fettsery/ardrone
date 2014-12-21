@@ -32,7 +32,7 @@
 int exit_program = 1;
 
 pre_stage_cfg_t precfg;
-display_stage_cfg_t dispCfg;
+volatile display_stage_cfg_t dispCfg;
 
 codec_type_t drone1Codec = P264_CODEC;
 codec_type_t drone2Codec = H264_360P_CODEC;
@@ -40,8 +40,7 @@ ZAP_VIDEO_CHANNEL videoChannel = ZAP_CHANNEL_HORI;
 
 #define FILENAMESIZE (256)
 char encodedFileName[FILENAMESIZE] = {0};
-char dataFileName[FILENAMESIZE] = {0};
-FILE* dataFile;
+FILE *subFileName;
 
 void controlCHandler (int signal)
 {
@@ -69,9 +68,8 @@ int main (int argc, char *argv[])
             char *fullname = argv[index];
             char *name = &fullname[2];
             strncpy (encodedFileName, name, FILENAMESIZE);
-	    strncpy(dataFileName, "data", 5);
-            strncpy(dataFileName + 4, name, FILENAMESIZE - 4);
-            dataFile = fopen(dataFileName, "wb");
+			strcat (name, ".srt");
+			subFileName = fopen(name, "wb");
         }
 
         if ('-' == argv[index][0] &&
@@ -263,6 +261,38 @@ bool_t ardrone_tool_exit ()
     return exit_program == 0;
 }
 
+/* Initialization local variables before event loop  */
+inline C_RESULT navdata_client_init( void* data )
+{
+  return C_OK;
+}
+
+/* Receving navdata during the event loop */
+inline C_RESULT navdata_client_process( const navdata_unpacked_t* const navdata )
+{
+	static long long counter = 0;
+	++counter;
+	const navdata_demo_t*nd = &navdata->navdata_demo;
+	dispCfg.height = nd->altitude;
+    dispCfg.tangage = nd->psi;
+	dispCfg.roll = nd->theta;
+	dispCfg.yaw = nd->phi;
+	if (counter % 10 == 0)
+	{
+		fprintf(subFileName, "%d\n", counter % 10);
+		frpintf(subFileName, "%d->%d\n", (counter % 10 - 1) / 5, (counter % 10) / 5);
+		fprintf(subFileName, "height - %f, tangage - %f, roll - %f, yaw - %f\n", dispCfg.height, dispCfg.tangage, dispCfg.roll, dispCfg.yaw);
+	}
+  return C_OK;
+}
+}
+
+/* Relinquish the local resources after the event loop exit */
+inline C_RESULT navdata_client_release( void )
+{
+  return C_OK;
+}
+
 /**
  * Declare Thread / Navdata tables
  */
@@ -280,4 +310,5 @@ THREAD_TABLE_ENTRY(gtk, 20)
 END_THREAD_TABLE
 
 BEGIN_NAVDATA_HANDLER_TABLE
+  NAVDATA_HANDLER_TABLE_ENTRY(navdata_client_init, navdata_client_process, navdata_client_release, NULL)
 END_NAVDATA_HANDLER_TABLE
