@@ -1,4 +1,4 @@
 ardrone
 =======
 
-collection and visualization telemetry from ardrone
+Collection and visualization telemetry from ardrone.
